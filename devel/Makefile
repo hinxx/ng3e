@@ -1,34 +1,43 @@
-MODULE ?= 
-$(info MODULE: $(MODULE), GOALS: $(MAKECMDGOALS))
+PKG ?=
+RCP ?=
+$(info PACKAGE: "$(PKG)", RECIPE: "$(RCP)", GOALS: "$(MAKECMDGOALS)")
 
 NG3E_TOP=$(shell cd ..; pwd)
 export NG3E_TOP
-$(info NG3E_TOP: '$(NG3E_TOP)')
+#$(info NG3E_TOP: '$(NG3E_TOP)')
 
 #$(info PATH: '$(PATH)')
 NEWPATH=$(join $(PATH),$(join :,$(NG3E_TOP)/tools)))
 #$(info NEWPATH: '$(NEWPATH)')
 PATH:=$(NEWPATH)
 export PATH
-$(info PATH: '$(PATH)')
+#$(info PATH: '$(PATH)')
 
 all: help
 	(echo $$PATH)
 
+test:
+	(cd $(PKG) && ng3e.sh $@ $(RCP))
+
+
+
 build:
-	(echo $$PATH; cd $(MODULE) && ng3e.py $@)
+	(cd $(PKG) && ng3e.sh $@ $(RCP))
 
 pack:
-	(cd $(MODULE) && ng3e.py $@)
+	(cd $(PKG) && ng3e.sh $@ $(RCP))
 
 clean:
-	(cd $(MODULE) && ng3e.py $@)
+	(cd $(PKG) && ng3e.sh $@ $(RCP))
 
 distclean:
-	(cd $(MODULE) && ng3e.py $@)
+	(cd $(PKG) && ng3e.sh $@ $(RCP))
 
-test:
-	(cd $(MODULE) && ng3e.py $@)
+release:
+	(cd $(PKG) && ng3e.sh $@ $(RCP))
+
+deploy:
+	(cd $(PKG) && ng3e.sh $@ $(RCP))
 
 help:
 	@echo ""
@@ -36,10 +45,11 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo ""
-	@echo " make build <module>             fetch the source and perform a build"
-	@echo " make pack <module>              pack the build result in compressed TAR file"
-	@echo " make clean <module>             clean the source tree"
-	@echo " make distclean <module>         really clean the source tree"
+	@echo " make build PKG=<package name> RCP=<recipe name>         fetch the source and perform a build"
+	@echo " make pack PKG=<package name> RCP=<recipe name>          pack the build result in compressed TAR file"
+	@echo " make clean PKG=<package name> RCP=<recipe name>         clean the source tree"
+	@echo " make distclean PKG=<package name> RCP=<recipe name>     clean the source tree and remove staged files"
+	@echo " make release PKG=<package name> RCP=<recipe name>       build and pack all versions of the module"
 	@echo ""
 	@echo ""
 	@echo "List of known modules:"

@@ -1,0 +1,4 @@
+NG3E_PKG_NAME="base"
+NG3E_PKG_VERSION="R3.15.4"
+NG3E_PKG_SOURCE="git@bitbucket.org:hinxx/epics-base.git"
+NG3E_PKG_GROUP="bases"
