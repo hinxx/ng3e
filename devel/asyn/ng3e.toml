@@ -1,0 +1,12 @@
+[package]
+name = "asyn"
+source = "git@bitbucket.org:hinxx/asyn.git"
+group = "modules"
+
+[[build]]
+version = "R4-30"
+
+[[build]]
+version = "R4-27"
+
+[depends]
