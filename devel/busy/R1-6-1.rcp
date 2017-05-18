@@ -1,0 +1,6 @@
+NG3E_PKG_NAME="busy"
+NG3E_PKG_VERSION="R1-6-1"
+NG3E_PKG_SOURCE="git@bitbucket.org:hinxx/busy.git"
+NG3E_PKG_GROUP="modules"
+# possible dependencies
+NG3E_PKG_DEPEND="asyn:R4-30"
