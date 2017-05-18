@@ -3,4 +3,4 @@ NG3E_PKG_VERSION="R4-30"
 NG3E_PKG_SOURCE="git@bitbucket.org:hinxx/asyn.git"
 NG3E_PKG_GROUP="modules"
 # possible dependencies
-#NG3E_PKG_DEPEND="ipac 2-13, seq 2-2-3"
+#NG3E_PKG_DEPEND="ipac:2-13, seq:2-2-3"
