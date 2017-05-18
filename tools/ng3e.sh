@@ -235,7 +235,7 @@ function __deploy_base() {
 function __get_deployed_base_versions() {
 	__in
 
-	pushd $NG3E_TOP/root/bases
+	pushd $NG3E_TOP/root/bases || __nok "bases dir not found"
 	tmp=$(ls -x --color=never -d base-* | sed 's/base-//g')
 	bases="NG3E_BASE_VERSIONS=\"$tmp\""
 	eval "$bases"
