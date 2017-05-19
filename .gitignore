@@ -1,3 +1,8 @@
-src
 stage
 *.tar*
+root
+tmp
+pool
+.cproject
+.project
+.settings
