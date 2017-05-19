@@ -2,10 +2,16 @@ PKG ?=
 RCP ?=
 $(info PACKAGE: "$(PKG)", RECIPE: "$(RCP)", GOALS: "$(MAKECMDGOALS)")
 
-NG3E_TOP=$(shell cd ..; pwd)
-export NG3E_TOP
+NG3E_TOP    := $(shell cd ..; pwd)
+NG3E_PKGS   := $(NG3E_TOP)/packages
+NG3E_STAGE  := $(NG3E_TOP)/stage
+NG3E_POOL   := $(NG3E_TOP)/pool
+NG3E_ROOT   := $(NG3E_TOP)/root
+
+export NG3E_TOP NG3E_PKGS NG3E_STAGE NG3E_POOL NG3E_ROOT
 #$(info NG3E_TOP: '$(NG3E_TOP)')
-NG3E=$(NG3E_TOP)/tools/ng3e.sh
+
+NG3ESH=$(NG3E_TOP)/tools/ng3e.sh
 
 #$(info PATH: '$(PATH)')
 #NEWPATH=$(join $(PATH),$(join :,$(NG3E_TOP)/tools)))
@@ -17,27 +23,27 @@ NG3E=$(NG3E_TOP)/tools/ng3e.sh
 all: help
 
 test:
-	(cd $(PKG) && $(NG3E) $@ $(RCP))
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
 
 
 build:
-	(cd $(PKG) && $(NG3E) $@ $(RCP))
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
 pack:
-	(cd $(PKG) && $(NG3E) $@ $(RCP))
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
 clean:
-	(cd $(PKG) && $(NG3E) $@ $(RCP))
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
 distclean:
-	(cd $(PKG) && $(NG3E) $@ $(RCP))
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
 release:
-	(cd $(PKG) && $(NG3E) $@ $(RCP))
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
 deploy:
-	(cd $(PKG) && $(NG3E) $@ $(RCP))
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
 help:
 	@echo ""
