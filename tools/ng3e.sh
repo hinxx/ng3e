@@ -313,7 +313,7 @@ function __release_module() {
 	__in
 
 	for base_ver in $NG3E_BASE_VERSIONS; do
-# 		__build_module
+ 		__build_module
 		__deploy "$base_ver/modules" "$NG3E_PKG_FULL_NAME"
 	done
 
