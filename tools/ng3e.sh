@@ -2,6 +2,10 @@
 
 NG3E_DEBUG=1
 
+##################################################################
+#							HELPERS
+##################################################################
+
 function __dbg() {
 	[ -n "$NG3E_DEBUG" ] && echo "[DBG] $@"
 }
@@ -32,46 +36,48 @@ function __load_recipe() {
 
 	rcp="$1"
 	[ -z "$rcp" ] && __nok "recipe not specified"
-	rcp="$rcp.rcp"
-	[ ! -f "$rcp" ] && __nok "recipe not found"
-	source "$rcp"
-
-	NG3E_PKG_RECIPE="$rcp"
-	export NG3E_PKG_RECIPE
+	rcpfile="$rcp.rcp"
+	[ ! -f "$rcpfile" ] && __nok "recipe file not found"
+	source "$rcpfile"
 
 	set | grep ^NG3E_
 
+	NG3E_PKG_RECIPE="$rcp"
+	export NG3E_PKG_RECIPE
+	NG3E_PKG_RECIPE_FILE="$rcpfile"
+	export NG3E_PKG_RECIPE_FILE
+	NG3E_PKG_FULL_NAME="$NG3E_PKG_NAME-$NG3E_PKG_RECIPE"
+	export NG3E_PKG_FULL_NAME
+	
 	__ok
 }
 
-function __get_full_version() {
+function __get_released_base_versions() {
 	__in
 
-	ver="$NG3E_PKG_VERSION"
-	if [ -z "$ver" ]; then
-		var="$(grep NG3E_PKG_VERSION $NG3E_PKG_RECIPE)"
-		eval "$var"
-		ver="$NG3E_PKG_VERSION"
-	fi
-	[ -z "$ver" ] && __nok "version not set"
-	
-	fullver="$ver"
-	if [ "$NG3E_PKG_GROUP" == "modules" ]; then
-		base_ver="$NG3E_PKG_BASE_VERSION"
-		if [ -z "$base_ver" ]; then
-			var="$(grep NG3E_PKG_BASE_VERSION $NG3E_PKG_RECIPE)"
-			eval "$var"
-			base_ver="$NG3E_PKG_BASE_VERSION"
+	tmp=""
+	pushd $NG3E_ROOT || __nok "root dir not found"
+	for dir in $(ls --color=never | grep ^R); do
+		if [ -d "$dir/base" ]; then
+			tmp="$tmp $dir"	
 		fi
-		[ -z "$base_ver" ] && __nok "base version not set"
-		fullver="${ver}_${base_ver}"
-	fi
+	done
+	bases="NG3E_BASE_VERSIONS=\"$tmp\""
+	eval "$bases"
+	__inf "released base: $NG3E_BASE_VERSIONS"
+	popd
+	
+	__ok
+}
 
-	NG3E_PKG_FULL_VERSION="$fullver"
-	export NG3E_PKG_FULL_VERSION
-		
-	NG3E_PKG_BUILD_DIR="build-$NG3E_PKG_FULL_VERSION"
-	export NG3E_PKG_BUILD_DIR
+function __init() {
+	__in
+
+	__get_released_base_versions
+	__load_recipe "$RCP"
+	for d in "$NG3E_STAGE" "$NG3E_POOL" "$NG3E_ROOT"; do
+		[ ! -d "$d" ] && mkdir -p "$d"
+	done
 
 	__ok
 }
@@ -79,7 +85,13 @@ function __get_full_version() {
 function __clone() {
 	__in
 
-	[ -d "src" ] || git clone $NG3E_PKG_SOURCE src || __nok "clone failed"
+	arg="$1"
+	[ -z "$arg" ] && __nok "missing argument"
+	dir="$NG3E_STAGE/$arg"
+	
+	if [ ! -d "$dir" ]; then
+		git clone "$NG3E_PKG_SOURCE" "$dir" || __nok "clone failed"
+	fi
 
 	__ok
 }
@@ -87,86 +99,97 @@ function __clone() {
 function __checkout() {
 	__in
 
-	if [ ! -d "$NG3E_PKG_BUILD_DIR" ]; then
-		cp -a src "$NG3E_PKG_BUILD_DIR" || __nok "cp src dir to build dir failed"
-		pushd "$NG3E_PKG_BUILD_DIR" || __nok "cd to build dir failed"
-		git checkout "$NG3E_PKG_VERSION" || __nok "checkout failed"
-		popd
+	arg="$1"
+	[ -z "$arg" ] && __nok "missing argument"
+	dir="$NG3E_STAGE/$arg"
+	[ ! -d "$dir" ] && __nok "src dir not found"
+
+	pushd "$dir" || __nok "cd to src dir failed"
+	ver=$(git describe --tags --always)
+	if [ "$ver" != "$NG3E_PKG_VERSION" ]; then
+		git checkout --detach "$NG3E_PKG_VERSION" || __nok "checkout failed"
+	fi
+	ver=$(git describe --tags)
+	[ "$ver" != "$NG3E_PKG_VERSION" ] && __nok "tag checkout failed"
+	popd
 	
-		cp "$NG3E_PKG_RECIPE" "$NG3E_PKG_BUILD_DIR" || __nok "recipe not found"
+	if [ ! -f "$dir/$NG3E_PKG_RECIPE_FILE" ]; then
+		cp "$NG3E_PKG_RECIPE_FILE" "$dir" || __nok "recipe not found"
 	fi
 	
-	__ok
-}
-
-function __clean() {
-	__in
-
-	[ ! -d "$NG3E_PKG_BUILD_DIR" ] && return 0
-
-	pushd "$NG3E_PKG_BUILD_DIR" || __nok
-	make -j clean
-	popd
-
-	rm -fr stage *.tar*
-
 	__ok
 }
 
 function __distclean() {
 	__in
 
-	rm -fr src build-* stage *.tar*
-	
+	arg="$1"
+	[ -z "$arg" ] && __nok "missing argument"
+	dir="$NG3E_STAGE/$arg"
+	[ ! -d "$dir" ] && __nok "src dir not found"
+
+	pushd "$dir" || __nok "cd to src dir failed"
+	make -j distclean
+	popd
+
 	__ok
 }
 
 function __compile() {
 	__in
 
-	pushd "$NG3E_PKG_BUILD_DIR" || __nok
-	make || __nok
+	arg="$1"
+	[ -z "$arg" ] && __nok "missing argument"
+	dir="$NG3E_STAGE/$arg"
+	[ ! -d "$dir" ] && __nok "src dir not found"
+
+	pushd "$dir" || __nok "cd to src dir failed"
+	make -j || __nok "compile failed"
 	popd
 
 	__ok
 }
 
-function __pack() {
+function __deploy() {
 	__in
 
- 	__get_full_version
+	arg="$1"
+	[ -z "$arg" ] && __nok "missing argument"
+	dir="$NG3E_STAGE/$arg"
+	[ ! -d "$dir" ] && __nok "src dir not found"
 
-	[ ! -d "$NG3E_PKG_BUILD_DIR" ] && __nok "no build dir"
-	
-	fullver="$NG3E_PKG_FULL_VERSION"
-	grp="$NG3E_PKG_GROUP"
-	namever="$NG3E_PKG_NAME-$fullver"
-	stagedir="stage/$grp"
+	namever="$NG3E_PKG_NAME-$NG3E_PKG_RECIPE"
 	archive="$namever.tar.bz2"
+	rm -f "$NG3E_STAGE/$archive"
 
-	rm -f "$archive"
-	rm -fr "stage"
-	mkdir -p "$stagedir" || __nok "mkdir stage dir failed"
-
-	cp -a "$NG3E_PKG_BUILD_DIR" "$stagedir/$namever" || __nok "cp build to stage dir failed"
-	find "$stagedir/$namever" -name O.* -o -name .git | xargs rm -fr
-
-	pushd "stage"
-	tar jcf ../$archive $grp || __nok "tar stage dir failed"
+	pushd "$NG3E_STAGE"
+	tar --exclude="O.*" --exclude-vcs -jcf "$NG3E_STAGE/$archive" "$arg" || __nok "tar stage dir failed"
 	popd
 	
+	if [ ! -f "$NG3E_POOL/$archive" ]; then
+		mv "$NG3E_STAGE/$archive" "$NG3E_POOL" || __nok "failed to move archive to pool"
+	else
+		__inf "archive already in the pool"
+	fi
+
+	if [ ! -d "$NG3E_ROOT/$arg" ]; then
+		tar xf "$NG3E_POOL/$archive" -C "$NG3E_ROOT" || __nok "failed to extract archive to root"
+	else
+		__inf "archive already extracted in the root"
+	fi
+
 	__ok
 }
 
-function __move_to_pool() {
+function __remove() {
 	__in
 
-	fullver="$NG3E_PKG_FULL_VERSION"
-	archive="$NG3E_PKG_NAME-$fullver.tar.bz2"
+	arg="$1"
+	[ -z "$arg" ] && __nok "missing argument"
+	dir="$NG3E_STAGE/$arg"
+	[ ! -d "$dir" ] && __nok "src dir not found"
 
-	[ ! -f "$archive" ] && __nok "archive not found"
-	
-	mv "$archive" "$NG3E_TOP/pool" || __nok "failed to move to pool"
+	rm -fr "$dir"
 	
 	__ok
 }
@@ -175,11 +198,10 @@ function __move_to_pool() {
 #							BASE
 ##################################################################
 
-function __clean_base() {
+function __distclean_base() {
 	__in
 
-	__get_full_version
-	__clean
+	__distclean "$NG3E_PKG_VERSION/base"
 
 	__ok
 }
@@ -187,21 +209,10 @@ function __clean_base() {
 function __build_base() {
 	__in
 
-	__get_full_version
-	__clone
-	__clean
-	__checkout
-	__compile
-	__pack
-
-	__ok
-}
-
-function __pack_base() {
-	__in
-
-	__get_full_version
-	__pack
+	__clone "$NG3E_PKG_VERSION/base"
+	__distclean "$NG3E_PKG_VERSION/base"
+	__checkout "$NG3E_PKG_VERSION/base"
+	__compile "$NG3E_PKG_VERSION/base"
 
 	__ok
 }
@@ -210,133 +221,55 @@ function __release_base() {
 	__in
 
 	__build_base
-	__move_to_pool
+	__deploy "$NG3E_PKG_VERSION/base"
 	
 	__ok
 }
 
-function __deploy_base() {
+function __remove_base() {
 	__in
 
-	__get_full_version
-
-	fullver="$NG3E_PKG_FULL_VERSION"
-	namever="$NG3E_PKG_NAME-$fullver"
-	archive="$namever.tar.bz2"
-
-	[ ! -f "$NG3E_TOP/pool/$archive" ] && __nok "archive not found"
-	[ -d "$NG3E_TOP/root/bases/$namever" ] && __nok "already deployed"
-
-	tar xf "$NG3E_TOP/pool/$archive" -C "$NG3E_TOP/root" || __nok "extract archive failed"
-
-	__ok
-}
-
-function __get_deployed_base_versions() {
-	__in
-
-	pushd $NG3E_TOP/root/bases || __nok "bases dir not found"
-	tmp=$(ls -x --color=never -d base-* | sed 's/base-//g')
-	bases="NG3E_BASE_VERSIONS=\"$tmp\""
-	eval "$bases"
-	__inf "deployed base: $NG3E_BASE_VERSIONS"
-	popd
+	__remove "$NG3E_PKG_VERSION/base"
 	
 	__ok
 }
-
-
 
 ##################################################################
 #							MODULE
 ##################################################################
 
-function __config_module_base() {
-	__in
-
-	[ -z "$NG3E_PKG_BASE_VERSION" ] && __nok "base version not set"
-
-	basedir="$NG3E_TOP/root/bases/base-$NG3E_PKG_BASE_VERSION"
-	[ ! -d "$basedir" ] && __nok "base dir does not exist"
-
-	echo "EPICS_BASE=$basedir" >> $NG3E_PKG_RELEASE_FILE
-
-	__ok
-}
-
-function __config_module_depends() {
-	__in
-
-	deps=""
-	for dep in $NG3E_PKG_DEPEND; do
-		pkg=$(echo $dep | cut -d: -f1)
-		ver=$(echo $dep | cut -d: -f2)
-		pkgdir="$NG3E_TOP/root/modules/${pkg}-${ver}_${NG3E_PKG_BASE_VERSION}"
-		key=$(echo $pkg | tr [:lower:] [:upper:])
-		echo "$key=$pkgdir" >> $NG3E_PKG_RELEASE_FILE
-	done
-
-	__ok
-}
-
 function __config_module() {
 	__in
 
-	release="$NG3E_PKG_BUILD_DIR/configure/RELEASE"
-	[ ! -d "$NG3E_PKG_BUILD_DIR/configure" ] && __nok "configure dir does not exist"
- 	NG3E_PKG_RELEASE_FILE="$release"
- 	export NG3E_PKG_RELEASE_FILE
+	arg="$1"
+	[ -z "$arg" ] && __nok "missing argument"
+	arg2="$2"
+	[ -z "$arg2" ] && __nok "missing argument"
+	dir="$NG3E_STAGE/$arg"
+	[ ! -d "$dir" ] && __nok "src dir not found"
+	basedir="$NG3E_STAGE/$arg2/base"
+	[ ! -d "$dir" ] && __nok "base dir not found"
 
-	echo "# Autogenerated by NG3E on $(date)" > $NG3E_PKG_RELEASE_FILE
-	echo >> $NG3E_PKG_RELEASE_FILE
-	__config_module_depends
-	echo >> $NG3E_PKG_RELEASE_FILE
-	__config_module_base
-	echo >> $NG3E_PKG_RELEASE_FILE
+	release="$dir/configure/RELEASE"
+	[ ! -d "$dir/configure" ] && __nok "configure dir does not exist"
 
-	__ok
-}
-
-function __clean_module_with_base() {
-	__in
-
-	base_ver="$1"
-	[ -z "$base_ver" ] && __nok "base version not specified"
-	
-	NG3E_PKG_BASE_VERSION="$base_ver"
-	export NG3E_PKG_BASE_VERSION
-
-	__get_full_version
-	__clean
-
-	__ok
-}
-
-function __clean_module() {
-	__in
-
-	for base_ver in $NG3E_BASE_VERSIONS; do
-		__clean_module_with_base "$base_ver"
+	echo "# Autogenerated by NG3E on $(date)" > $release
+	echo >> $release
+	echo "## >>> dependencies from the recipe" >> $release
+	for dep in $NG3E_PKG_DEPEND; do
+		name=$(echo $dep | cut -d: -f1)
+		rcp=$(echo $dep | cut -d: -f2)
+		pkgdir="$NG3E_STAGE/$arg2/modules/${name}-${rcp}"
+		key=$(echo $name | tr [:lower:] [:upper:])
+		echo "$key=$pkgdir" >> $release
 	done
+	echo "## <<< dependencies from the recipe" >> $release
+	echo >> $release
+	echo "## >>> EPICS base from the recipe" >> $release
+	echo "EPICS_BASE=$basedir" >> $release
+	echo "## <<< EPICS base from the recipe" >> $release
 
-	__ok
-}
-
-function __build_module_with_base() {
-	__in
-
-	base_ver="$1"
-	[ -z "$base_ver" ] && __nok "base version not specified"
-	
-	NG3E_PKG_BASE_VERSION="$base_ver"
-	export NG3E_PKG_BASE_VERSION
-
-	__get_full_version
-	__clone
-	__checkout
-	__config_module
-	__clean
-	__compile
+	echo >> $release
 
 	__ok
 }
@@ -345,32 +278,11 @@ function __build_module() {
 	__in
 
 	for base_ver in $NG3E_BASE_VERSIONS; do
-		__build_module_with_base "$base_ver"
-	done
-
-	__ok
-}
-
-function __pack_module_with_base() {
-	__in
-
-	base_ver="$1"
-	[ -z "$base_ver" ] && __nok "base version not specified"
-	
-	NG3E_PKG_BASE_VERSION="$base_ver"
-	export NG3E_PKG_BASE_VERSION
-
-	__get_full_version
-	__pack
-
-	__ok
-}
-
-function __pack_module() {
-	__in
-
-	for base_ver in $NG3E_BASE_VERSIONS; do
-		__pack_module_with_base "$base_ver"
+		__clone "$base_ver/modules/$NG3E_PKG_FULL_NAME"
+		__checkout "$base_ver/modules/$NG3E_PKG_FULL_NAME"
+		__config_module "$base_ver/modules/$NG3E_PKG_FULL_NAME" "$base_ver"
+		__distclean "$base_ver/modules/$NG3E_PKG_FULL_NAME"
+		__compile "$base_ver/modules/$NG3E_PKG_FULL_NAME"
 	done
 
 	__ok
@@ -380,42 +292,18 @@ function __release_module() {
 	__in
 
 	for base_ver in $NG3E_BASE_VERSIONS; do
-		__build_module_with_base "$base_ver"
- 		__pack
-		__move_to_pool
+		__build_module
+		__deploy "$base_ver/modules"
 	done
-	
-	__ok
-}
-
-function __deploy_module_with_base() {
-	__in
-
-	base_ver="$1"
-	[ -z "$base_ver" ] && __nok "base version not specified"
-	
-	NG3E_PKG_BASE_VERSION="$base_ver"
-	export NG3E_PKG_BASE_VERSION
-
-	__get_full_version
-
-	fullver="$NG3E_PKG_FULL_VERSION"
-	namever="$NG3E_PKG_NAME-$fullver"
-	archive="$namever.tar.bz2"
-
-	[ ! -f "$NG3E_TOP/pool/$archive" ] && __nok "archive not found"
-	[ -d "$NG3E_TOP/root/modules/$namever" ] && __nok "already deployed"
-
-	tar xf "$NG3E_TOP/pool/$archive" -C "$NG3E_TOP/root" || __nok "extract archive failed"
 
 	__ok
 }
 
-function __deploy_module() {
+function __remove_module() {
 	__in
 
 	for base_ver in $NG3E_BASE_VERSIONS; do
-		__deploy_module_with_base "$base_ver"
+		__remove "$base_ver/modules/$NG3E_PKG_FULL_NAME"
 	done
 
 	__ok
@@ -434,24 +322,10 @@ function ng3e_clean() {
 	__in
 
 	case $NG3E_PKG_GROUP in
-	"bases")
-		__clean_base
-		;;
-	"modules")
-		__clean_module
-		;;
-	*)
-		__nok "unknown package group"
-		;;
+		"bases")	__distclean_base ;;
+		"modules")	__clean_module ;;
+		*)			__nok "unknown package group" ;;
 	esac
-
-	__ok
-}
-
-function ng3e_distclean() {
-	__in
-
- 	__distclean
 
 	__ok
 }
@@ -460,33 +334,9 @@ function ng3e_build() {
 	__in
 
 	case $NG3E_PKG_GROUP in
-	"bases")
-		__build_base
-		;;
-	"modules")
-		__build_module
-		;;
-	*)
-		__nok "unknown package group"
-		;;
-	esac
-
-	__ok
-}
-
-function ng3e_pack() {
-	__in
-
-	case $NG3E_PKG_GROUP in
-	"bases")
-		__pack_base
-		;;
-	"modules")
-		__pack_module
-		;;
-	*)
-		__nok "unknown package group"
-		;;
+		"bases") 	__build_base ;;
+		"modules")	__build_module ;;
+		*)			__nok "unknown package group" ;;
 	esac
 
 	__ok
@@ -496,38 +346,25 @@ function ng3e_release() {
 	__in
 
 	case $NG3E_PKG_GROUP in
-	"bases")
-		__release_base
-		;;
-	"modules")
-		__release_module
-		;;
-	*)
-		__nok "unknown package group"
-		;;
+		"bases") 	__release_base ;;
+		"modules")	__release_module ;;
+		*)			__nok "unknown package group" ;;
 	esac
 
 	__ok
 }
 
-function ng3e_deploy() {
+function ng3e_remove() {
 	__in
 
 	case $NG3E_PKG_GROUP in
-	"bases")
-		__deploy_base
-		;;
-	"modules")
-		__deploy_module
-		;;
-	*)
-		__nok "unknown package group"
-		;;
+		"bases")	__remove_base ;;
+		"modules")	__remove_module ;;
+		*)			__nok "unknown package group" ;;
 	esac
 
 	__ok
 }
-
 
 ##################################################################
 #							MAIN
@@ -536,31 +373,28 @@ function ng3e_deploy() {
 function main() {
 	__in
 	
-	__inf "NG3E top : \"$NG3E_TOP\""
-	__inf "command  : \"$CMD\""
-	__inf "recipe   : \"$RCP\""
+	__inf "NG3E_TOP    : \"$NG3E_TOP\""
+	__inf "NG3E_PKGS   : \"$NG3E_PKGS\""
+	__inf "NG3E_STAGE  : \"$NG3E_STAGE\""
+	__inf "NG3E_POOL   : \"$NG3E_POOL\""
+	__inf "NG3E_ROOT   : \"$NG3E_ROOT\""
+	__inf "command     : \"$CMD\""
+	__inf "recipe      : \"$RCP\""
 	
-	__get_deployed_base_versions
-	__load_recipe "$RCP"
+	__init
 	
 	case $CMD in
 	"clean")
 		ng3e_clean
 		;;
-	"distclean")
-		ng3e_distclean
-		;;
 	"build")
 		ng3e_build
-		;;
-	"pack")
-		ng3e_pack
 		;;
 	"release")
 		ng3e_release
 		;;
-	"deploy")
-		ng3e_deploy
+	"remove")
+		ng3e_remove
 		;;
 	*)
 		__nok "unknown command"
