@@ -157,9 +157,11 @@ function __deploy() {
 	[ -z "$arg" ] && __nok "missing argument"
 	dir="$NG3E_STAGE/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
+	# modules provide package full name as second argument (base does not)
+	arg2="$2"
+	[ -n "$arg2" ] && arg2="/$arg2"
 
-	namever="$NG3E_PKG_NAME-$NG3E_PKG_RECIPE"
-	archive="$namever.tar.bz2"
+	archive="$NG3E_PKG_FULL_NAME.tar.bz2"
 	rm -f "$NG3E_STAGE/$archive"
 
 	pushd "$NG3E_STAGE"
@@ -172,7 +174,7 @@ function __deploy() {
 		__inf "archive already in the pool"
 	fi
 
-	if [ ! -d "$NG3E_ROOT/$arg" ]; then
+	if [ ! -d "$NG3E_ROOT/$arg$arg2" ]; then
 		tar xf "$NG3E_POOL/$archive" -C "$NG3E_ROOT" || __nok "failed to extract archive to root"
 	else
 		__inf "archive already extracted in the root"
@@ -201,6 +203,15 @@ function __remove() {
 function __distclean_base() {
 	__in
 
+	__distclean "$NG3E_PKG_VERSION/base"
+
+	__ok
+}
+
+function __devel_base() {
+	__in
+
+	__clone "$NG3E_PKG_VERSION/base"
 	__distclean "$NG3E_PKG_VERSION/base"
 
 	__ok
@@ -274,6 +285,16 @@ function __config_module() {
 	__ok
 }
 
+function __devel_module() {
+	__in
+
+	for base_ver in $NG3E_BASE_VERSIONS; do
+		__clone "$base_ver/modules/$NG3E_PKG_FULL_NAME"
+	done
+
+	__ok
+}
+
 function __build_module() {
 	__in
 
@@ -292,8 +313,8 @@ function __release_module() {
 	__in
 
 	for base_ver in $NG3E_BASE_VERSIONS; do
-		__build_module
-		__deploy "$base_ver/modules"
+# 		__build_module
+		__deploy "$base_ver/modules" "$NG3E_PKG_FULL_NAME"
 	done
 
 	__ok
@@ -323,7 +344,19 @@ function ng3e_clean() {
 
 	case $NG3E_PKG_GROUP in
 		"bases")	__distclean_base ;;
-		"modules")	__clean_module ;;
+		"modules")	__distclean_module ;;
+		*)			__nok "unknown package group" ;;
+	esac
+
+	__ok
+}
+
+function ng3e_devel() {
+	__in
+
+	case $NG3E_PKG_GROUP in
+		"bases")	__devel_base ;;
+		"modules")	__devel_module ;;
 		*)			__nok "unknown package group" ;;
 	esac
 
@@ -386,6 +419,9 @@ function main() {
 	case $CMD in
 	"clean")
 		ng3e_clean
+		;;
+	"devel")
+		ng3e_devel
 		;;
 	"build")
 		ng3e_build

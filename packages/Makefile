@@ -20,6 +20,9 @@ test:
 
 
 
+devel:
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
+
 build:
 	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
