@@ -1,0 +1,4 @@
+NG3E_PKG_NAME="autosave"
+NG3E_PKG_VERSION="R5-7-1"
+NG3E_PKG_SOURCE="git@bitbucket.org:hinxx/autosave.git"
+NG3E_PKG_GROUP="modules"
