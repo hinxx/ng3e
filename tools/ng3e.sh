@@ -48,7 +48,7 @@ function __load_recipe() {
 	export NG3E_PKG_RECIPE_FILE
 	NG3E_PKG_FULL_NAME="$NG3E_PKG_NAME-$NG3E_PKG_RECIPE"
 	export NG3E_PKG_FULL_NAME
-	
+
 	__ok
 }
 
@@ -59,25 +59,25 @@ function __get_released_base_versions() {
 	pushd $NG3E_ROOT || __nok "root dir not found"
 	for dir in $(ls --color=never | grep ^R); do
 		if [ -d "$dir/base" ]; then
-			tmp="$tmp $dir"	
+			tmp="$tmp $dir"
 		fi
 	done
 	bases="NG3E_BASE_VERSIONS=\"$tmp\""
 	eval "$bases"
 	__inf "released base: $NG3E_BASE_VERSIONS"
 	popd
-	
+
 	__ok
 }
 
 function __init() {
 	__in
 
-	__get_released_base_versions
-	__load_recipe "$RCP"
 	for d in "$NG3E_STAGE" "$NG3E_POOL" "$NG3E_ROOT"; do
 		[ ! -d "$d" ] && mkdir -p "$d"
 	done
+	__get_released_base_versions
+	__load_recipe "$RCP"
 
 	__ok
 }
@@ -88,7 +88,7 @@ function __clone() {
 	arg="$1"
 	[ -z "$arg" ] && __nok "missing argument"
 	dir="$NG3E_STAGE/$arg"
-	
+
 	if [ ! -d "$dir" ]; then
 		git clone "$NG3E_PKG_SOURCE" "$dir" || __nok "clone failed"
 	fi
@@ -112,11 +112,11 @@ function __checkout() {
 	ver=$(git describe --tags)
 	[ "$ver" != "$NG3E_PKG_VERSION" ] && __nok "tag checkout failed"
 	popd
-	
+
 	if [ ! -f "$dir/$NG3E_PKG_RECIPE_FILE" ]; then
 		cp "$NG3E_PKG_RECIPE_FILE" "$dir" || __nok "recipe not found"
 	fi
-	
+
 	__ok
 }
 
@@ -167,7 +167,7 @@ function __deploy() {
 	pushd "$NG3E_STAGE"
 	tar --exclude="O.*" --exclude-vcs -jcf "$NG3E_STAGE/$archive" "$arg" || __nok "tar stage dir failed"
 	popd
-	
+
 	if [ ! -f "$NG3E_POOL/$archive" ]; then
 		mv "$NG3E_STAGE/$archive" "$NG3E_POOL" || __nok "failed to move archive to pool"
 	else
@@ -192,7 +192,7 @@ function __remove() {
 	[ ! -d "$dir" ] && __nok "src dir not found"
 
 	rm -fr "$dir"
-	
+
 	__ok
 }
 
@@ -233,7 +233,7 @@ function __release_base() {
 
 	__build_base
 	__deploy "$NG3E_PKG_VERSION/base"
-	
+
 	__ok
 }
 
@@ -241,7 +241,7 @@ function __remove_base() {
 	__in
 
 	__remove "$NG3E_PKG_VERSION/base"
-	
+
 	__ok
 }
 
@@ -405,7 +405,7 @@ function ng3e_remove() {
 
 function main() {
 	__in
-	
+
 	__inf "NG3E_TOP    : \"$NG3E_TOP\""
 	__inf "NG3E_PKGS   : \"$NG3E_PKGS\""
 	__inf "NG3E_STAGE  : \"$NG3E_STAGE\""
@@ -413,9 +413,9 @@ function main() {
 	__inf "NG3E_ROOT   : \"$NG3E_ROOT\""
 	__inf "command     : \"$CMD\""
 	__inf "recipe      : \"$RCP\""
-	
+
 	__init
-	
+
 	case $CMD in
 	"clean")
 		ng3e_clean
