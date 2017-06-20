@@ -41,6 +41,7 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo ""
+	@echo " make devel PKG=<package name> RCP=<recipe name>         fetch the source only (used for development purposes)"
 	@echo " make build PKG=<package name> RCP=<recipe name>         fetch the source and perform a build"
 	@echo " make clean PKG=<package name> RCP=<recipe name>         clean the source tree"
 	@echo " make release PKG=<package name> RCP=<recipe name>       build and pack all versions of the module"
