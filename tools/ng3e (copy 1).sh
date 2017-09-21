@@ -153,6 +153,8 @@ function __compile() {
 function __deploy() {
 	__in
 
+	set -x 
+	
 	arg="$1"
 	[ -z "$arg" ] && __nok "missing argument"
 	dir="$NG3E_STAGE/$arg"
@@ -268,10 +270,18 @@ function __config_module() {
 	echo >> $release
 	echo "## >>> dependencies from the recipe" >> $release
 	for dep in $NG3E_PKG_DEPEND; do
-		name=$(echo $dep | cut -d: -f1)
-		rcp=$(echo $dep | cut -d: -f2)
+		nrtok=$(echo $dep | tr ":" " " | wc -w)
+		if [ $nrtok -eq 2 ]; then
+			name=$(echo $dep | cut -d: -f1)
+			var=$name
+			rcp=$(echo $dep | cut -d: -f2)
+		elif [ $nrtok -eq 3 ]; then
+			var=$(echo $dep | cut -d: -f1)
+			name=$(echo $dep | cut -d: -f2)
+			rcp=$(echo $dep | cut -d: -f3)
+		fi
 		pkgdir="$NG3E_STAGE/$arg2/modules/${name}-${rcp}"
-		key=$(echo $name | tr [:lower:] [:upper:])
+		key=$(echo $var | tr [:lower:] [:upper:])
 		echo "$key=$pkgdir" >> $release
 	done
 	echo "## <<< dependencies from the recipe" >> $release
