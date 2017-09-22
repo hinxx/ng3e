@@ -12,6 +12,9 @@ function __dbg() {
 function __inf() {
 	echo "[INF] $@"
 }
+function __wrn() {
+	echo "[WRN] $@"
+}
 function __err() {
 	echo "[ERR] $@"
 }
@@ -29,6 +32,9 @@ function __ok() {
 }
 function __nok() {
 	__abort "${FUNCNAME[1]} <<< $*"
+}
+function __warn() {
+	__wrn "${FUNCNAME[1]} <<< $*"
 }
 
 function __load_recipe() {
@@ -159,7 +165,7 @@ function __deploy() {
 	[ ! -d "$dir" ] && __nok "src dir not found"
 	# modules provide package full name as second argument (base does not)
 	arg2="$2"
-	[ -n "$arg2" ] && arg2="/$arg2"
+	[ -n "$arg2" ] && arg="$arg/$arg2"
 
 	archive="$NG3E_PKG_FULL_NAME.tar.bz2"
 	rm -f "$NG3E_STAGE/$archive"
@@ -168,17 +174,23 @@ function __deploy() {
 	tar --exclude="O.*" --exclude-vcs -jcf "$NG3E_STAGE/$archive" "$arg" || __nok "tar stage dir failed"
 	popd
 
-	if [ ! -f "$NG3E_POOL/$archive" ]; then
-		mv "$NG3E_STAGE/$archive" "$NG3E_POOL" || __nok "failed to move archive to pool"
-	else
-		__inf "archive already in the pool"
-	fi
+# XXX: do we need this?
+#	if [ ! -f "$NG3E_POOL/$archive" ]; then
+#		mv "$NG3E_STAGE/$archive" "$NG3E_POOL" || __nok "failed to move archive to pool"
+#	else
+#		__inf "archive already in the pool"
+#	fi
+	rm -f "$NG3E_POOL/$archive"
+	mv "$NG3E_STAGE/$archive" "$NG3E_POOL" || __nok "failed to move archive to pool"
 
-	if [ ! -d "$NG3E_ROOT/$arg$arg2" ]; then
-		tar xf "$NG3E_POOL/$archive" -C "$NG3E_ROOT" || __nok "failed to extract archive to root"
-	else
-		__inf "archive already extracted in the root"
-	fi
+# XXX: do we need this?
+#	if [ ! -d "$NG3E_ROOT/$arg$arg2" ]; then
+#		tar xf "$NG3E_POOL/$archive" -C "$NG3E_ROOT" || __nok "failed to extract archive to root"
+#	else
+#		__inf "archive already extracted in the root"
+#	fi
+	rm -fr "$NG3E_ROOT/$arg$arg2"
+	tar xf "$NG3E_POOL/$archive" -C "$NG3E_ROOT" || __nok "failed to extract archive to root"
 
 	__ok
 }
@@ -188,10 +200,18 @@ function __remove() {
 
 	arg="$1"
 	[ -z "$arg" ] && __nok "missing argument"
-	dir="$NG3E_STAGE/$arg"
-	[ ! -d "$dir" ] && __nok "src dir not found"
 
+	# remove stuff from all folders!
+	
+	dir="$NG3E_STAGE/$arg"
+	[ ! -d "$dir" ] && __wrn "stage dir not found"
 	rm -fr "$dir"
+	dir="$NG3E_ROOT/$arg"
+	[ ! -d "$dir" ] && __wrn "root dir not found"
+	rm -fr "$dir"
+	file="$NG3E_POOL/$NG3E_PKG_FULL_NAME".tar.bz2
+	[ ! -d "$file" ] && __wrn "pool archive not found"
+	rm -fr "$file"
 
 	__ok
 }
@@ -258,7 +278,7 @@ function __config_module() {
 	[ -z "$arg2" ] && __nok "missing argument"
 	dir="$NG3E_STAGE/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
-	basedir="$NG3E_STAGE/$arg2/base"
+	basedir="$NG3E_ROOT/$arg2/base"
 	[ ! -d "$dir" ] && __nok "base dir not found"
 
 	release="$dir/configure/RELEASE"
@@ -270,7 +290,7 @@ function __config_module() {
 	for dep in $NG3E_PKG_DEPEND; do
 		name=$(echo $dep | cut -d: -f1)
 		rcp=$(echo $dep | cut -d: -f2)
-		pkgdir="$NG3E_STAGE/$arg2/modules/${name}-${rcp}"
+		pkgdir="$NG3E_ROOT/$arg2/modules/${name}-${rcp}"
 		key=$(echo $name | tr [:lower:] [:upper:])
 		echo "$key=$pkgdir" >> $release
 	done
