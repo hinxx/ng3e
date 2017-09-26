@@ -48,6 +48,12 @@ function __load_recipe() {
 
 	set | grep ^NG3E_
 
+	# figure out version based on supplied tag / branch
+	NG3E_PKG_VERSION=
+	[ -n "$NG3E_PKG_TAG" ] && NG3E_PKG_VERSION="$NG3E_PKG_TAG"
+	[ -z "$NG3E_PKG_VERSION" ] && NG3E_PKG_VERSION="$NG3E_PKG_BRANCH"
+	[ -z "$NG3E_PKG_VERSION" ] && __nok "version not set"
+	
 	NG3E_PKG_RECIPE="$rcp"
 	export NG3E_PKG_RECIPE
 	NG3E_PKG_RECIPE_FILE="$rcpfile"
@@ -70,7 +76,11 @@ function __get_released_base_versions() {
 	done
 	bases="NG3E_BASE_VERSIONS=\"$tmp\""
 	eval "$bases"
-	__inf "released base: $NG3E_BASE_VERSIONS"
+	if [ -z "$NG3E_BASE_VERSIONS" -a "$NG3E_PKG_NAME" != "base" ]; then
+		__nok "no released bases found in $NG3E_ROOT!"
+	else
+		__inf "released base: $NG3E_BASE_VERSIONS"
+	fi
 	popd
 
 	__ok
@@ -82,8 +92,8 @@ function __init() {
 	for d in "$NG3E_STAGE" "$NG3E_POOL" "$NG3E_ROOT"; do
 		[ ! -d "$d" ] && mkdir -p "$d"
 	done
-	__get_released_base_versions
 	__load_recipe "$RCP"
+	__get_released_base_versions
 
 	__ok
 }
@@ -111,13 +121,19 @@ function __checkout() {
 	[ ! -d "$dir" ] && __nok "src dir not found"
 
 	pushd "$dir" || __nok "cd to src dir failed"
-	ver=$(git describe --tags --always)
-	if [ "$ver" != "$NG3E_PKG_VERSION" ]; then
-		git checkout --detach "$NG3E_PKG_VERSION" || __nok "checkout failed"
+	# is version baed on tag or branch?
+	if [ -n "$NG3E_PKG_TAG" -a "$NG3E_PKG_TAG" = "$NG3E_PKG_VERSION" ]; then
+		ver=$(git describe --tags --always)
+		if [ "$ver" != "$NG3E_PKG_VERSION" ]; then
+			git checkout --detach "$NG3E_PKG_VERSION" || __nok "checkout failed"
+		fi
+		ver=$(git describe --tags)
+		[ "$ver" != "$NG3E_PKG_VERSION" ] && __nok "tag checkout failed"
+	else
+		git checkout "$NG3E_PKG_VERSION" || __nok "checkout failed"
 	fi
-	ver=$(git describe --tags)
-	[ "$ver" != "$NG3E_PKG_VERSION" ] && __nok "tag checkout failed"
 	popd
+	__inf "Checked out version (tag/branch): $NG3E_PKG_NAME:$NG3E_PKG_VERSION"
 
 	if [ ! -f "$dir/$NG3E_PKG_RECIPE_FILE" ]; then
 		cp "$NG3E_PKG_RECIPE_FILE" "$dir" || __nok "recipe not found"

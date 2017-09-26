@@ -1,8 +1,7 @@
 NG3E_PKG_NAME="calc"
-NG3E_PKG_VERSION="R5-4-2"
+NG3E_PKG_TAG="R5-4-2"
+NG3E_PKG_BRANCH=
 NG3E_PKG_SOURCE="https://github.com/hinxx/calc.git"
+NG3E_PKG_UPSTREAM="https://github.com/epics-modules/calc.git"
 NG3E_PKG_GROUP="modules"
-# possible dependencies
 NG3E_PKG_DEPEND="sscan:R2-10-2+ess-1"
-#NG3E_PKG_DEPEND="sscan:R2-10-2+ess-1 sncseq:2-2-0-2"
-
