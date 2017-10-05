@@ -1,10 +1,14 @@
-# Recipe definitions
+# Recipe file definitions
 
-Recipe is a collection of kay=value lines that define package name, version, GIT repository and some other properties.
+Updated: Sep 27 2017, Hinko Kocevar <hinko.kocevar@esss.se>
 
-Keys need to start with _NG3E_PKG__.
+## Introduction
 
-Values need to be enclosed with double-quotes (").
+Recipe is a collection of key=value lines that define package name, version, GIT repository and some other properties.
+
+Keys start with _NG3E_PKG__.
+
+Values can be enclosed with double-quotes ("); double-quotes are mandatory if value contains spaces.
 
 Here is an example of recipe for package named _foo_, with GIT repository tag _R1-0_:
 
@@ -12,7 +16,7 @@ Here is an example of recipe for package named _foo_, with GIT repository tag _R
 	NG3E_PKG_TAG="R1-0"
 	NG3E_PKG_BRANCH=
 	NG3E_PKG_SOURCE="https://github.com/hinxx/foo"
-	NG3E_PKG_UPSTREAM=
+	NG3E_PKG_UPSTREAM="https://github.com/another/foo"
 	NG3E_PKG_GROUP="modules"
 	NG3E_PKG_DEPEND="baz:R1-2"
 
@@ -54,8 +58,19 @@ If set it shall be used to sync the forked GIT repository in order to get upstre
 Defines a group that the package belongs to.
 Currently _base_ and _modules_ group can be set.
 
-### NG3E_PKG_DEPEND
+### NG3E_PKG_NEED_LIBS
 
-Defines list of packages that this package depends upon, separated by space.
-A dependency package definition looks like __pacakge_name:package_version__.
-List of dependencies can be empty.
+Defines space separated list of packages that this package needs at build time.
+A dependency package definition looks like __package_name:package_version__.
+Only first level of dependencies is required, the rest are recursively added.
+List can be empty.
+See also __NG3E_PKG_NEED_PRODS__.
+
+### NG3E_PKG_NEED_PRODS
+
+Defines space separated list of packages that this package needs at (build and) runtime time.
+A dependency package definition looks like __package_name:package_version__.
+Only first level of dependencies is required, the rest are recursively added.
+If a dependency is listed in __NG3E_PKG_NEED_LIBS__ it does not need to be listed here.
+List can be empty.
+See also __NG3E_PKG_NEED_LIBS__.
