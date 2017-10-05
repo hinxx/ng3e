@@ -4,4 +4,6 @@ NG3E_PKG_BRANCH=
 NG3E_PKG_SOURCE="https://github.com/hinxx/asyn.git"
 NG3E_PKG_UPSTREAM="https://github.com/epics-modules/asyn"
 NG3E_PKG_GROUP="modules"
-#NG3E_PKG_DEPEND="ipac:2-13, seq:2-2-3"
+#NG3E_PKG_NEED_LIBS="ipac:master seq:master"
+NG3E_PKG_NEED_LIBS=
+NG3E_PKG_NEED_PRODS=
