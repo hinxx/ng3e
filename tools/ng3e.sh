@@ -255,6 +255,13 @@ function __deploy() {
 
 	rsync -a --exclude="O.*" --exclude=".git*" "$NG3E_STAGE/$arg/" "$NG3E_ROOT/$arg"
 
+	if [ "$NG3E_PKG_GROUP" = "iocs" ]; then
+		# change any 'stage' parts of the path to 'root' for envPaths
+		find "$NG3E_ROOT/$arg" -name envPaths | xargs sed -i -e 's#/stage/#/root/#'
+		# remove unused generated files cdCommands and dllPath.bat
+		find "$NG3E_ROOT/$arg" -name cdCommands -o -name dllPath.bat | xargs rm -f
+	fi
+
 	__ok
 }
 
