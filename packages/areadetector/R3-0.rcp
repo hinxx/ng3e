@@ -1,7 +1,0 @@
-NG3E_PKG_NAME="areadetector"
-NG3E_PKG_TAG="R3-0"
-NG3E_PKG_BRANCH=
-NG3E_PKG_SOURCE="https://github.com/hinxx/areaDetector.git"
-NG3E_PKG_UPSTREAM="https://github.com/areaDetector/areaDetector.git"
-NG3E_PKG_GROUP="modules"
-NG3E_PKG_DEPEND="asyn:R4-31 autosave:R5-8 busy:R1-6-1 calc:R5-4-2 sscan:R2-10-2+ess-1"
