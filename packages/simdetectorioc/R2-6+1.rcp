@@ -1,6 +1,6 @@
 NG3E_PKG_NAME="simdetectorioc"
-NG3E_PKG_TAG=
-NG3E_PKG_BRANCH="R2-6"
+NG3E_PKG_TAG="R2-6+1"
+NG3E_PKG_BRANCH=
 NG3E_PKG_SOURCE="https://github.com/hinxx/SimDetectorIOC.git"
 NG3E_PKG_UPSTREAM=
 NG3E_PKG_GROUP="iocs"
