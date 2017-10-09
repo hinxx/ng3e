@@ -1,7 +1,0 @@
-NG3E_PKG_NAME="tlccsioc"
-NG3E_PKG_TAG="R1-0"
-NG3E_PKG_BRANCH=
-NG3E_PKG_SOURCE="https://github.com/hinxx/tlccsioc.git"
-NG3E_PKG_UPSTREAM=
-NG3E_PKG_GROUP="modules"
-NG3E_PKG_DEPEND="asyn:R4-32 autosave:R5-8 busy:R1-6-1 calc:R5-4-2 sscan:R2-10-2+ess-1 adcore:R3-1+ess-1 adsupport:R1-3+ess-1 adtlccs:R1-0"
