@@ -252,8 +252,9 @@ function __deploy() {
 	[ -n "$arg2" ] && arg="$arg/$arg2"
 
 	rm -fr "$NG3E_ROOT/$arg"
-
-	rsync -a --exclude="O.*" --exclude=".git*" "$NG3E_STAGE/$arg/" "$NG3E_ROOT/$arg"
+	mkdir -p "$NG3E_ROOT/$arg" || __nok "failed to create folder"
+	
+	rsync -a --exclude="O.*" --exclude=".git*" "$NG3E_STAGE/$arg/" "$NG3E_ROOT/$arg/" || __nok "failed to deploy"
 
 	if [ "$NG3E_PKG_GROUP" = "iocs" ]; then
 		# change any 'stage' parts of the path to 'root' for envPaths
