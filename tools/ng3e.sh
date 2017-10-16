@@ -337,12 +337,22 @@ function __devel_base() {
 	__in
 
 	__clone "$NG3E_PKG_VERSION/base"
-	__distclean "$NG3E_PKG_VERSION/base"
 
 	__ok
 }
 
 function __build_base() {
+	__in
+
+	__clone "$NG3E_PKG_VERSION/base"
+	__checkout "$NG3E_PKG_VERSION/base"
+	__compile "$NG3E_PKG_VERSION/base"
+	__deploy "$NG3E_PKG_VERSION/base"
+
+	__ok
+}
+
+function __rebuild_base() {
 	__in
 
 	__clone "$NG3E_PKG_VERSION/base"
@@ -357,7 +367,7 @@ function __build_base() {
 function __release_base() {
 	__in
 
-	__build_base
+	__rebuild_base
 	__release "$NG3E_PKG_VERSION/base"
 	
 	__ok
@@ -438,6 +448,20 @@ function __build_module() {
 		__clone "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME"
 		__checkout "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME"
 		__config_module "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME" "$base_ver"
+		__compile "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME"
+		__deploy "$base_ver/$NG3E_PKG_GROUP" "$NG3E_PKG_FULL_NAME"
+	done
+
+	__ok
+}
+
+function __rebuild_module() {
+	__in
+
+	for base_ver in $NG3E_BASE_VERSIONS; do
+		__clone "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME"
+		__checkout "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME"
+		__config_module "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME" "$base_ver"
 		__distclean "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME"
 		__compile "$base_ver/$NG3E_PKG_GROUP/$NG3E_PKG_FULL_NAME"
 		__deploy "$base_ver/$NG3E_PKG_GROUP" "$NG3E_PKG_FULL_NAME"
@@ -450,7 +474,7 @@ function __release_module() {
 	__in
 
 	for base_ver in $NG3E_BASE_VERSIONS; do
- 		__build_module
+ 		__rebuild_module
 		__release "$base_ver/$NG3E_PKG_GROUP" "$NG3E_PKG_FULL_NAME"
 	done
 
@@ -521,6 +545,21 @@ function ng3e_build() {
 	__ok
 }
 
+function ng3e_rebuild() {
+	__in
+
+	case $NG3E_PKG_GROUP in
+		bases)
+			__rebuild_base ;;
+		modules|iocs)
+			__rebuild_module ;;
+		*)
+			__nok "unknown package group" ;;
+	esac
+
+	__ok
+}
+
 function ng3e_release() {
 	__in
 
@@ -577,6 +616,9 @@ function main() {
 		;;
 	"build")
 		ng3e_build
+		;;
+	"rebuild")
+		ng3e_rebuild
 		;;
 	"release")
 		ng3e_release

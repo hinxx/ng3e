@@ -26,6 +26,9 @@ devel:
 build:
 	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
+rebuild:
+	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
+
 clean:
 	(cd $(PKG) && $(NG3ESH) $@ $(RCP))
 
@@ -41,11 +44,12 @@ help:
 	@echo ""
 	@echo "Usage:"
 	@echo ""
-	@echo " make devel PKG=<package name> RCP=<recipe name>         fetch the source only (used for development purposes)"
-	@echo " make build PKG=<package name> RCP=<recipe name>         fetch the source and perform a build"
-	@echo " make clean PKG=<package name> RCP=<recipe name>         clean the source tree"
-	@echo " make release PKG=<package name> RCP=<recipe name>       build and pack all versions of the module"
-	@echo " make remove PKG=<package name> RCP=<recipe name>        remove staged files"
+	@echo " make devel    PKG=<package name> RCP=<recipe name>         fetch the source only"
+	@echo " make clean    PKG=<package name> RCP=<recipe name>         clean the source tree"
+	@echo " make build    PKG=<package name> RCP=<recipe name>         perform a build"
+	@echo " make rebuild  PKG=<package name> RCP=<recipe name>         clean the source tree and perform a build"
+	@echo " make release  PKG=<package name> RCP=<recipe name>         perform rebuild and package"
+	@echo " make remove   PKG=<package name> RCP=<recipe name>         remove files from stage and root"
 	@echo ""
 	@echo ""
 	@echo "List of known modules:"
