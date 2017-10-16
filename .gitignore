@@ -6,3 +6,4 @@ pool
 .cproject
 .project
 .settings
+*.md.html
