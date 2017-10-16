@@ -271,17 +271,17 @@ function __release() {
 
 	arg="$1"
 	[ -z "$arg" ] && __nok "missing argument"
-	dir="$NG3E_STAGE/$arg"
+	dir="$NG3E_ROOT/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
 	# modules provide package full name as second argument (base does not)
 	arg2="$2"
 	[ -n "$arg2" ] && arg="$arg/$arg2"
 
 	archive="$NG3E_PKG_FULL_NAME.tar.bz2"
-	rm -f "$NG3E_STAGE/$archive"
+	rm -f "/tmp/$archive"
 
-	pushd "$NG3E_STAGE"
-	tar --exclude="O.*" --exclude-vcs -jcf "$NG3E_STAGE/$archive" "$arg" || __nok "tar stage dir failed"
+	pushd "$NG3E_ROOT"
+	tar --exclude="O.*" --exclude-vcs -jcf "/tmp/$archive" "$arg" || __nok "tar stage dir failed"
 	popd
 
 # XXX: do we need this?
@@ -295,7 +295,7 @@ function __release() {
 #		__inf "archive already in the pool"
 #	fi
 	rm -f "$NG3E_POOL/$archive"
-	mv "$NG3E_STAGE/$archive" "$NG3E_POOL" || __nok "failed to move archive to pool"
+	mv "/tmp/$archive" "$NG3E_POOL" || __nok "failed to move archive to pool"
 
 	__ok
 }
@@ -349,6 +349,7 @@ function __build_base() {
 	__distclean "$NG3E_PKG_VERSION/base"
 	__checkout "$NG3E_PKG_VERSION/base"
 	__compile "$NG3E_PKG_VERSION/base"
+	__deploy "$NG3E_PKG_VERSION/base"
 
 	__ok
 }
@@ -357,8 +358,8 @@ function __release_base() {
 	__in
 
 	__build_base
-	__deploy "$NG3E_PKG_VERSION/base"
-
+	__release "$NG3E_PKG_VERSION/base"
+	
 	__ok
 }
 
