@@ -1,0 +1,8 @@
+NG3E_PKG_NAME="tlpm100ioc"
+NG3E_PKG_TAG=
+NG3E_PKG_BRANCH="master"
+NG3E_PKG_SOURCE="https://github.com/hinxx/tlpm100ioc.git"
+NG3E_PKG_UPSTREAM=
+NG3E_PKG_GROUP="iocs"
+NG3E_PKG_NEED_LIBS="tlpm100:master"
+NG3E_PKG_NEED_PRODS="streamdevice:master autosave:R5-8"
