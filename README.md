@@ -2,7 +2,7 @@
 
 Author: Hinko Kocevar <hinko.kocevar@esss.se>
 
-Updated: 2017-06-20
+Updated: 2017-10-31
 
 ## Goals
 
@@ -125,6 +125,69 @@ The branch or tag name is used in the recipe files to checkout desired source.
 
 ### Building from source
 
+In the __tools/__ folder two BASH scripts can be found.  
+The __ng3e_single.sh__ is used to work with a single package.  
+The __ng3e_batch.sh__ is used to work with a complete dependency chain of a given package.  
+
+Prior to executing one of these scripts user must set environment variable __NG3E_TOP__ to point to top level folder:
+Example:
+
+	export NG3E_TOP=$(pwd)
+	
+	or
+	
+	export NG3E_TOP=/opt/ng3e
+
+Then scripts can be executed from any folder.
+
+Example:
+
+	$ bash git/ng3e-devel/tools/ng3e_single.sh 
+	Usage:
+	
+	 bash git/ng3e-devel/tools/ng3e_single.sh RECIPE COMMAND
+	
+	     RECIPE ....... path to recipe file (*.rcp)
+	
+	    COMMAND ....... one of the following
+	      devel         fetch the source only
+	      clean         clean the source tree
+	      build         perform a build
+	    rebuild         clean the source tree and perform a build
+	    release         perform rebuild and package
+	     remove         remove files from stage and root
+	
+	
+	List of known packages and versions:
+	
+	             PACKAGE ..... VERSION(s)
+	----------------------------------------------------------------------------------
+	             adandor ..... master.rcp R2-6.rcp 
+	            adaravis ..... ESS-master+1.rcp ESS-master+2.rcp ESS-master.rcp 
+	              adcore ..... ESS-R3-1+1.rcp ESS-R3-1.rcp master.rcp 
+	       adsimdetector ..... ESS-R2-6+1.rcp ESS-R2-6.rcp master.rcp 
+	           adsupport ..... ESS-R1-3+1.rcp ESS-R1-3.rcp master.rcp 
+	             adtlccs ..... master+1.rcp master+2.rcp master.rcp 
+	            andorioc ..... master.rcp 
+	           aravisioc ..... master+1.rcp master.rcp 
+	        areadetector ..... master.rcp 
+	                asyn ..... ESS-R4-32+1.rcp ESS-R4-32.rcp master.rcp 
+	            autosave ..... master.rcp R5-8.rcp 
+	                base ..... 3.15.rcp R3.14.12.5.rcp R3.15.4.rcp 
+	                busy ..... master.rcp R1-6-1.rcp 
+	                calc ..... master.rcp R5-4-2.rcp 
+	             devlib2 ..... 2.9.rcp master.rcp 
+	              dtuioc ..... master+1.rcp master.rcp 
+	              evrioc ..... master.rcp 
+	              imgioc ..... master+1.rcp master+2.rcp master+3.rcp master.rcp 
+	             mrfioc2 ..... 2.1.0.rcp ESS-master.rcp master.rcp 
+	      simdetectorioc ..... master.rcp R2-6+1.rcp R2-6.rcp 
+	               sscan ..... master.rcp R2-10-2.rcp 
+	        streamdevice ..... master+1.rcp master.rcp 
+	            tlccsioc ..... master+1.rcp master+2.rcp master.rcp 
+	             tlpm100 ..... master+1.rcp master.rcp 
+	          tlpm100ioc ..... master+1.rcp master.rcp 
+	
 
 
 #### Updating forked repos

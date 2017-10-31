@@ -47,18 +47,34 @@ Will install into __/usr/local__.
 
 ## Configure IOC
 
-Open the __$HOME/ng3e/root/R3.15.4/iocs/imgioc-master+1/iocBoot/iocImg/st.cmd__ and:
+Open the __$HOME/ng3e/root/R3.15.4/iocs/imgioc-master+3/iocBoot/iocImg/st.cmd__ and:
 
-* adjust the camera ID:
+* adjust the camera ID to:
 
-	aravisCameraConfig("$(PORT)", "Allied Vision Technologies-50-0503355057")
-	
+	aravisCameraConfig("$(PORT)", "Allied Vision Technologies-50-0503374606")
+
+	or
+
+	aravisCameraConfig("$(PORT)", "Allied Vision Technologies-50-0503374607")
+
 * adjust the spectrometer ID:
 
-	epicsEnvSet("RSCSTR", "USB::0x1313::0x8087::M00407309::RAW")
+	# CCS175
+	epicsEnvSet("RSCSTR", "USB::0x1313::0x8087::M00408690::RAW")
+
+	or
+
+	# CCS100
+	epicsEnvSet("RSCSTR", "USB::0x1313::0x8081::M00407489::RAW")
+
 
 * if no other USB TMC devices are present no configuration is needed for PM100USB
 
 Start the IOC:
 
+	cd $HOME/ng3e/root/R3.15.4/iocs/imgioc-master+3/iocBoot/iocImg
 	LD_LIBRARY_PATH=/usr/local/lib ../../bin/linux-x86_64/imgApp st.cmd
+
+	or
+
+	start_ioc.sh

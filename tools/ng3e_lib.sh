@@ -1,6 +1,7 @@
 #!/bin/bash
-
-NG3E_DEBUG=1
+#
+# Source this file from ng3e_env.sh to get all the handy functions.
+#
 
 ##################################################################
 #							HELPERS
@@ -37,26 +38,29 @@ function __warn() {
 	__wrn "${FUNCNAME[1]} <<< $*"
 }
 
+##################################################################
+#							WORKERS
+##################################################################
+
 function __load_recipe() {
 	__in
 
-	rcp="$1"
-	[ -z "$rcp" ] && __nok "recipe not specified"
-	rcpfile="$rcp.rcp"
+	rcpfile="$1"
+	[ -z "$rcpfile" ] && __nok "recipe file not specified"
 	[ ! -f "$rcpfile" ] && __nok "recipe file not found"
 	source "$rcpfile"
 
-	set | grep ^NG3E_
+	set | grep ^NG3E_PKG_
 
 	# figure out version based on supplied tag / branch
 	NG3E_PKG_VERSION=
 	[ -n "$NG3E_PKG_TAG" ] && NG3E_PKG_VERSION="$NG3E_PKG_TAG"
 	[ -z "$NG3E_PKG_VERSION" ] && NG3E_PKG_VERSION="$NG3E_PKG_BRANCH"
 	[ -z "$NG3E_PKG_VERSION" ] && __nok "version not set"
-	
+
 	NG3E_PKG_DEPENDS=
 	export NG3E_PKG_DEPENDS
-	NG3E_PKG_RECIPE="$rcp"
+	NG3E_PKG_RECIPE="$(basename $rcpfile .rcp)"
 	export NG3E_PKG_RECIPE
 	NG3E_PKG_RECIPE_FILE="$rcpfile"
 	export NG3E_PKG_RECIPE_FILE
@@ -74,10 +78,10 @@ function __load_needed_libs() {
 	name=$(echo "$1" | cut -f1 -d':')
 	ver=$(echo "$1" | cut -f2 -d':')
 	rcp="$ver.rcp"
-	
+
 	# get needed libs
 	deps=$(grep '^NG3E_PKG_NEED_LIBS=' $NG3E_PKGS/$name/$rcp | cut -f2 -d'=' | sed -e's/"//g')
-	
+
 	for dep in $deps; do
 		__inf "LIB depend: $dep"
 		NG3E_PKG_DEPENDS="$NG3E_PKG_DEPENDS $dep"
@@ -89,9 +93,9 @@ function __load_needed_libs() {
 
 function __load_needed_prods() {
 	__in
-	
+
 	[ -z "$1" ] && __nok "package name not specified"
-	
+
 	name=$(echo "$1" | cut -f1 -d':')
 	ver=$(echo "$1" | cut -f2 -d':')
 	rcp="$ver.rcp"
@@ -103,7 +107,7 @@ function __load_needed_prods() {
 		NG3E_PKG_DEPENDS="$NG3E_PKG_DEPENDS $dep"
 		__load_dependencies "$dep"
 	done
-	
+
 	__ok
 }
 
@@ -118,7 +122,7 @@ function __load_dependencies() {
 	fi
 	deps=$(echo "$NG3E_PKG_DEPENDS" | tr ' ' '\n' | sort | uniq)
 	NG3E_PKG_DEPENDS="$(echo $deps | tr '\n' ' ')"
-	
+
 	__ok
 }
 
@@ -144,6 +148,56 @@ function __get_released_base_versions() {
 	__ok
 }
 
+function __create_stamp() {
+	__in
+
+	stamp="$1"
+	[ -z "$stamp" ] && __nok "stamp not specified"
+
+	if [ ! -f "$stamp" ]; then
+		touch "$stamp" || __nok "failed to create stamp $stamp"
+		__dbg "created stamp $stamp"
+	else
+		__dbg "stamp already exists $stamp"
+	fi
+
+	__ok
+}
+
+function __remove_stamp() {
+	__in
+
+	stamp="$1"
+	[ -z "$stamp" ] && __nok "stamp not specified"
+
+	if [ ! -f "$stamp" ]; then
+		__dbg "stamp absent $stamp"
+	else
+		rm -f "$stamp"
+		__dbg "removed stamp $stamp"
+	fi
+
+	__ok
+}
+
+function __have_stamp() {
+	__in
+
+	stamp="$1"
+	[ -z "$stamp" ] && __nok "stamp not specified"
+
+	ret=0
+	if [ ! -f "$stamp" ]; then
+		__dbg "stamp absent $stamp"
+		ret=1
+	else
+		__dbg "stamp exists $stamp"
+	fi
+
+	__ok
+	return $ret
+}
+
 function __init() {
 	__in
 
@@ -151,7 +205,7 @@ function __init() {
 		[ ! -d "$d" ] && mkdir -p "$d"
 	done
 
-	__load_recipe "$RCP"
+	__load_recipe "$1"
 	__load_dependencies "$NG3E_PKG_NAME:$NG3E_PKG_VERSION"
 	__inf "final dependency list: $NG3E_PKG_DEPENDS"
 	__get_released_base_versions
@@ -188,6 +242,8 @@ function __checkout() {
 	dir="$NG3E_STAGE/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
 
+	__have_stamp "$dir/checkout_done.stamp" && return 0
+
 	pushd "$dir" || __nok "cd to src dir failed"
 	# is version based on tag or branch?
 	if [ -n "$NG3E_PKG_TAG" -a "$NG3E_PKG_TAG" = "$NG3E_PKG_VERSION" ]; then
@@ -207,6 +263,8 @@ function __checkout() {
 		cp "$NG3E_PKG_RECIPE_FILE" "$dir" || __nok "recipe not found"
 	fi
 
+	__create_stamp "$dir/checkout_done.stamp" || __nok "failed to create checkout_done.stamp"
+
 	__ok
 }
 
@@ -222,6 +280,9 @@ function __distclean() {
 	make -j distclean
 	popd
 
+	__remove_stamp "$dir/config_done.stamp"
+	__remove_stamp "$dir/build_done.stamp"
+
 	__ok
 }
 
@@ -233,9 +294,13 @@ function __compile() {
 	dir="$NG3E_STAGE/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
 
+	__have_stamp "$dir/build_done.stamp" && return 0
+
 	pushd "$dir" || __nok "cd to src dir failed"
-	make -j || __nok "compile failed"
+	make -Orecurse -j || __nok "compile failed"
 	popd
+
+	__create_stamp "$dir/build_done.stamp" || __nok "failed to create build_done.stamp"
 
 	__ok
 }
@@ -245,15 +310,16 @@ function __deploy() {
 
 	arg="$1"
 	[ -z "$arg" ] && __nok "missing argument"
+	# modules provide package full name as second argument (base does not)
+	[ -n "$2" ] && arg="$arg/$2"
 	dir="$NG3E_STAGE/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
-	# modules provide package full name as second argument (base does not)
-	arg2="$2"
-	[ -n "$arg2" ] && arg="$arg/$arg2"
+
+	__have_stamp "$dir/build_done.stamp" || return 1
 
 	rm -fr "$NG3E_ROOT/$arg"
 	mkdir -p "$NG3E_ROOT/$arg" || __nok "failed to create folder"
-	
+
 	rsync -a --exclude="O.*" --exclude=".git*" "$NG3E_STAGE/$arg/" "$NG3E_ROOT/$arg/" || __nok "failed to deploy"
 
 	if [ "$NG3E_PKG_GROUP" = "iocs" ]; then
@@ -269,23 +335,28 @@ function __deploy() {
 function __release() {
 	__in
 
+	[ -z "$1" ] && __nok "missing argument"
 	arg="$1"
-	[ -z "$arg" ] && __nok "missing argument"
+	# modules provide package full name as second argument (base does not)
+	[ -n "$2" ] && arg="$arg/$2"
 	dir="$NG3E_ROOT/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
-	# modules provide package full name as second argument (base does not)
-	arg2="$2"
-	[ -n "$arg2" ] && arg="$arg/$arg2"
 
 	archive="$NG3E_PKG_FULL_NAME.tar.bz2"
 	rm -f "/tmp/$archive"
+
+	if [ -f "$NG3E_POOL/$archive" ]; then
+		__inf "archive $NG3E_POOL/$archive already exists!"
+		__ok
+		return 0
+	fi
 
 	pushd "$NG3E_ROOT"
 	tar --exclude="O.*" --exclude-vcs -jcf "/tmp/$archive" "$arg" || __nok "tar stage dir failed"
 	popd
 
 # XXX: do we need this?
-#      should we be allowed to overwrite existing archive that might be different from 
+#      should we be allowed to overwrite existing archive that might be different from
 #       one already existing - this should be prevented as current package might alredy
 #       be distributed to users!!!!
 
@@ -307,7 +378,7 @@ function __remove() {
 	[ -z "$arg" ] && __nok "missing argument"
 
 	# remove stuff from all folders!
-	
+
 	dir="$NG3E_STAGE/$arg"
 	[ ! -d "$dir" ] && __wrn "stage dir not found"
 	rm -fr "$dir"
@@ -367,9 +438,9 @@ function __rebuild_base() {
 function __release_base() {
 	__in
 
-	__rebuild_base
+	__build_base
 	__release "$NG3E_PKG_VERSION/base"
-	
+
 	__ok
 }
 
@@ -398,14 +469,15 @@ function __distclean_module() {
 function __config_module() {
 	__in
 
-	arg="$1"
-	[ -z "$arg" ] && __nok "missing argument"
-	arg2="$2"
-	[ -z "$arg2" ] && __nok "missing argument"
+	[ -z "$1" ] && __nok "missing argument"
+	[ -z "$2" ] && __nok "missing argument"
+	base_ver="$2"
 	dir="$NG3E_STAGE/$arg"
 	[ ! -d "$dir" ] && __nok "src dir not found"
-	basedir="$NG3E_ROOT/$arg2/base"
+	basedir="$NG3E_ROOT/$base_ver/base"
 	[ ! -d "$dir" ] && __nok "base dir not found"
+
+	__have_stamp "$dir/config_done.stamp" && return 0
 
 	release="$dir/configure/RELEASE"
 	[ ! -d "$dir/configure" ] && __nok "configure dir does not exist"
@@ -416,7 +488,7 @@ function __config_module() {
 	for dep in $NG3E_PKG_DEPENDS; do
 		name=$(echo $dep | cut -d: -f1)
 		rcp=$(echo $dep | cut -d: -f2)
-		pkgdir="$NG3E_ROOT/$arg2/modules/${name}-${rcp}"
+		pkgdir="$NG3E_ROOT/$base_ver/modules/${name}-${rcp}"
 		key=$(echo $name | tr [:lower:] [:upper:])
 		echo "$key=$pkgdir" >> $release
 	done
@@ -427,6 +499,8 @@ function __config_module() {
 	echo "## <<< EPICS base from the recipe" >> $release
 
 	echo >> $release
+
+	__create_stamp "$dir/config_done.stamp" || __nok "failed to create config_done.stamp"
 
 	__ok
 }
@@ -474,7 +548,7 @@ function __release_module() {
 	__in
 
 	for base_ver in $NG3E_BASE_VERSIONS; do
- 		__rebuild_module
+ 		__build_module
 		__release "$base_ver/$NG3E_PKG_GROUP" "$NG3E_PKG_FULL_NAME"
 	done
 
@@ -594,20 +668,58 @@ function ng3e_remove() {
 #							MAIN
 ##################################################################
 
-function main() {
+function usage() {
+		echo ""
+		echo "Usage:"
+		echo ""
+		if [ "$2" = "single" ]; then
+			echo " bash $1 RECIPE COMMAND"
+			echo ""
+			echo "     RECIPE ....... path to recipe file (*.rcp)"
+			echo ""
+			echo "    COMMAND ....... one of the following"
+			echo "      devel         fetch the source only"
+			echo "      clean         clean the source tree"
+			echo "      build         perform a build"
+			echo "    rebuild         clean the source tree and perform a build"
+			echo "    release         perform rebuild and package"
+			echo "     remove         remove files from stage and root"
+		elif [ "$2" = "batch" ]; then
+			echo " bash $1 RECIPE"
+			echo ""
+			echo "     RECIPE ....... path to recipe file (*.rcp)"
+		fi
+		
+		echo ""
+		echo ""
+		echo "List of known packages and versions:"
+		echo ""
+		pushd $NG3E_PKGS >/dev/null
+		printf "%20s ..... %s\n" "PACKAGE" "RECIPE(s)"
+		echo "----------------------------------------------------------------------------------"
+		pkgs=$(ls -1 -d */ | sed 's#/##')
+		for pkg in $pkgs; do
+			printf "%20s ..... %s\n" $pkg "$(ls $pkg | tr '\n' ' ')"
+		done
+		popd >/dev/null
+		echo ""
+}
+
+function handle_recipe() {
 	__in
 
+	# show the environment and arguments
 	__inf "NG3E_TOP    : \"$NG3E_TOP\""
 	__inf "NG3E_PKGS   : \"$NG3E_PKGS\""
 	__inf "NG3E_STAGE  : \"$NG3E_STAGE\""
 	__inf "NG3E_POOL   : \"$NG3E_POOL\""
 	__inf "NG3E_ROOT   : \"$NG3E_ROOT\""
-	__inf "command     : \"$CMD\""
-	__inf "recipe      : \"$RCP\""
+	__inf "recipe      : \"$1\""
+	__inf "command     : \"$2\""
 
-	__init
+	__init "$1"
 
-	case $CMD in
+	case $2 in
 	"clean")
 		ng3e_clean
 		;;
@@ -633,8 +745,3 @@ function main() {
 
 	__ok
 }
-
-CMD="$1"
-RCP="$2"
-
-main
