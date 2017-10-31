@@ -25,31 +25,18 @@ Will install into __/usr/local__.
 
 ## Build base
 
-	make PKG=base RCP=R3.15.4 release
+	bash tools/ng3e_single.sh packages/base/R3.15.4.rcp release
 
-## Build packages
+## Build IOC & dependent packages
 
-	make PKG=asyn RCP=ESS-R4-32+1 release
-	make PKG=autosave RCP=R5-8 release
-	make PKG=busy RCP=R1-6-1 release
-	make PKG=sscan RCP=R2-10-2 release
-	make PKG=calc RCP=R5-4-2 release
-	make PKG=adsupport RCP=ESS-R1-3+1 release
-	make PKG=adcore RCP=ESS-R3-1+1 release
-	make PKG=adaravis RCP=ESS-master+2 release
-	make PKG=adtlccs RCP=master+2 release
-	make PKG=streamdevice RCP=master+1 release
-	make PKG=tlpm100 RCP=master+1 release
-
-## Build IOC
-
-	make PKG=imgioc RCP=master+3 release
+	export IMGIOC_RCP=master+3
+	bash tools/ng3e_batch.sh packages/imgioc/$IMGIOC_RCP.rcp
 
 ## Configure IOC
 
-Open the __$HOME/ng3e/root/R3.15.4/iocs/imgioc-master+3/iocBoot/iocImg/st.cmd__ and:
+Open the __$HOME/ng3e/root/R3.15.4/iocs/imgioc-$IMGIOC_RCP/iocBoot/iocImg/st.cmd__ and:
 
-* adjust the camera ID to:
+Configure the camera ID to:
 
 	aravisCameraConfig("$(PORT)", "Allied Vision Technologies-50-0503374606")
 
@@ -57,7 +44,7 @@ Open the __$HOME/ng3e/root/R3.15.4/iocs/imgioc-master+3/iocBoot/iocImg/st.cmd__ 
 
 	aravisCameraConfig("$(PORT)", "Allied Vision Technologies-50-0503374607")
 
-* adjust the spectrometer ID:
+Configure the spectrometer ID:
 
 	# CCS175
 	epicsEnvSet("RSCSTR", "USB::0x1313::0x8087::M00408690::RAW")
@@ -68,11 +55,11 @@ Open the __$HOME/ng3e/root/R3.15.4/iocs/imgioc-master+3/iocBoot/iocImg/st.cmd__ 
 	epicsEnvSet("RSCSTR", "USB::0x1313::0x8081::M00407489::RAW")
 
 
-* if no other USB TMC devices are present no configuration is needed for PM100USB
+If no other USB TMC devices are present no configuration is needed for PM100USB.
 
-Start the IOC:
+## Start the IOC
 
-	cd $HOME/ng3e/root/R3.15.4/iocs/imgioc-master+3/iocBoot/iocImg
+	cd $HOME/ng3e/root/R3.15.4/iocs/imgioc-$IMGIOC_RCP/iocBoot/iocImg
 	LD_LIBRARY_PATH=/usr/local/lib ../../bin/linux-x86_64/imgApp st.cmd
 
 	or
