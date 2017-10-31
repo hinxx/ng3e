@@ -37,7 +37,7 @@ Will install into __/usr/local__.
 	make PKG=adsupport RCP=ESS-R1-3+1 release
 	make PKG=adcore RCP=ESS-R3-1+1 release
 	make PKG=adaravis RCP=ESS-master+2 release
-	make PKG=adtlccs RCP=master+1 release
+	make PKG=adtlccs RCP=master+2 release
 	make PKG=streamdevice RCP=master+1 release
 	make PKG=tlpm100 RCP=master+1 release
 
@@ -58,6 +58,7 @@ Open the __$HOME/ng3e/root/R3.15.4/iocs/imgioc-master+1/iocBoot/iocImg/st.cmd__ 
 	epicsEnvSet("RSCSTR", "USB::0x1313::0x8087::M00407309::RAW")
 
 * if no other USB TMC devices are present no configuration is needed for PM100USB
+
 Start the IOC:
 
 	LD_LIBRARY_PATH=/usr/local/lib ../../bin/linux-x86_64/imgApp st.cmd
