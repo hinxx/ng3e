@@ -4,5 +4,5 @@ NG3E_PKG_BRANCH="master"
 NG3E_PKG_SOURCE="https://github.com/hinxx/imgioc.git"
 NG3E_PKG_UPSTREAM=
 NG3E_PKG_GROUP="iocs"
-NG3E_PKG_NEED_LIBS="adaravis:ESS-master adtlccs:master"
-NG3E_PKG_NEED_PRODS="adcore:ESS-R3-1+1"
+NG3E_PKG_NEED_LIBS="adaravis:ESS-master+2 adtlccs:master+1 tlpm100:master+1"
+NG3E_PKG_NEED_PRODS="streamdevice:master+1 adcore:ESS-R3-1+1"
