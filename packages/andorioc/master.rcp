@@ -1,0 +1,8 @@
+NG3E_PKG_NAME="andorioc"
+NG3E_PKG_TAG=
+NG3E_PKG_BRANCH="master"
+NG3E_PKG_SOURCE="https://github.com/hinxx/andorIoc.git"
+NG3E_PKG_UPSTREAM=
+NG3E_PKG_GROUP="iocs"
+NG3E_PKG_NEED_LIBS="adandor:master"
+NG3E_PKG_NEED_PRODS="adcore:ESS-R3-1+1"
