@@ -40,6 +40,7 @@ Will install into __/usr/local__.
 	make PKG=adtlccs RCP=master+2 release
 	make PKG=streamdevice RCP=master+1 release
 	make PKG=tlpm100 RCP=master+1 release
+	make PKG=lairdtechpr59 RCP=master release
 
 ## Build IOC
 
