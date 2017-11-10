@@ -1,0 +1,8 @@
+NG3E_PKG_NAME="lairdtechpr59"
+NG3E_PKG_TAG=
+NG3E_PKG_BRANCH="master"
+NG3E_PKG_SOURCE="https://github.com/hinxx/lairdtechpr59.git"
+NG3E_PKG_UPSTREAM=
+NG3E_PKG_GROUP="modules"
+NG3E_PKG_NEED_LIBS="asyn:ESS-R4-32+1"
+NG3E_PKG_NEED_PRODS=
